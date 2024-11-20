@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1440 - 1440X</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+            font-family: 'Courier New', monospace;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .time-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00FF41;
+            z-index: 1;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            text-shadow: 0 0 10px #00FF41;
+        }
+
+        .timezone {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 120px);
+            color: #007FFF;
+            z-index: 1;
+            text-align: center;
+            font-size: 1rem;
+            text-shadow: 0 0 10px #007FFF;
+            opacity: 0.9;
+        }
+
+        .minutes-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .minutes {
+            font-size: 8rem;
+            font-weight: bold;
+        }
+
+        .label {
+            font-size: 1.5rem;
+            opacity: 0.8;
+            margin-top: 1rem;
+        }
+
+        .x-red {
+            color: #FF0000;
+            text-shadow: 0 0 10px #FF0000;
+            font-style: italic;
+        }
+
+        .tagline {
+            color: #FF0000;
+            text-shadow: 0 0 10px #FF0000;
+            margin-top: 1rem;
+        }
+
+        /* Pulse animation */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .pulse-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background-color: #00FF41;
+            opacity: 0;
+            z-index: -1;
+        }
+
+        .pulse-ring.active {
+            animation: pulse-ring 1s cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+
+        /* Number flash animation */
+        @keyframes number-flash {
+            0% {
+                text-shadow: 0 0 10px #00FF41;
+            }
+            50% {
+                text-shadow: 0 0 30px #00FF41, 0 0 50px #00FF41;
+                color: #ffffff;
+            }
+            100% {
+                text-shadow: 0 0 10px #00FF41;
+            }
+        }
+
+        .minutes.flash {
+            animation: number-flash 1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="time-display">
+        <div class="minutes-container">
+            <div class="minutes" id="minutes">1440</div>
+            <div class="pulse-ring"></div>
+        </div>
+        <div class="label">1440<b class="x-red">X</b></div>
+        <div class="tagline"><b><i>"Control the Clock Control the Game"</i></b></div>
+    </div>
+    <div class="timezone" id="current-time"></div>
+
+    <script>
+        // Matrix rain setup
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        // Matrix rain configuration
+        const chars = '1440';
+        const fontSize = 16;
+        let drops = [];
+
+        // Set canvas size and initialize drops
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const columns = Math.floor(canvas.width / fontSize);
+            
+            // Reset drops array with new size
+            drops = [];
+            for(let i = 0; i < columns; i++) {
+                drops[i] = 1;
+            }
+        }
+
+        // Initial setup
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Drawing the Matrix rain
+        function drawRain() {
+            // Semi-transparent black BG for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Set the font once
+            ctx.font = `${fontSize}px monospace`;
+
+            // Drawing the characters
+            for(let i = 0; i < drops.length; i++) {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                
+                // Choose color and add glow effect
+                if(Math.random() < 0.8) {
+                    ctx.fillStyle = '#00FF41';
+                    ctx.shadowColor = '#00FF41';
+                } else {
+                    ctx.fillStyle = '#007FFF';
+                    ctx.shadowColor = '#007FFF';
+                }
+                
+                ctx.shadowBlur = 10;
+                ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+                ctx.shadowBlur = 0;
+
+                // Reset drop to top when it reaches bottom
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                
+                drops[i]++;
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            drawRain();
+            requestAnimationFrame(animate);
+        }
+
+        // Create pulse effect
+        function createPulseEffect() {
+            const minutesEl = document.querySelector('.minutes');
+            const pulseRing = document.querySelector('.pulse-ring');
+            
+            if (minutesEl && pulseRing) {
+                minutesEl.classList.remove('flash');
+                pulseRing.classList.remove('active');
+                
+                void minutesEl.offsetWidth;
+                void pulseRing.offsetWidth;
+                
+                minutesEl.classList.add('flash');
+                pulseRing.classList.add('active');
+            }
+        }
+
+        // Format time in 12-hour format
+        function formatTime(date) {
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            return `${hours}:${minutes} ${ampm}`;
+        }
+
+        // Time update function
+        function updateMinutesLeft() {
+            const now = new Date();
+            const nyTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            
+            const currentMinute = nyTime.getMinutes();
+            const minutesLeft = 1440 - (nyTime.getHours() * 60 + currentMinute);
+            
+            const minutesEl = document.getElementById('minutes');
+            const currentTimeEl = document.getElementById('current-time');
+            
+            if (minutesEl) {
+                minutesEl.textContent = minutesLeft;
+            }
+            
+            if (currentTimeEl) {
+                currentTimeEl.textContent = formatTime(nyTime);
+            }
+
+            if (lastMinute !== null && lastMinute !== currentMinute) {
+                createPulseEffect();
+            }
+            lastMinute = currentMinute;
+        }
+
+        // Start everything
+        let lastMinute = null;
+        animate();
+        updateMinutesLeft();
+        setInterval(updateMinutesLeft, 1000);
+    </script>
+</body>
+</html>
